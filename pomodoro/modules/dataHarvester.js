@@ -47,15 +47,11 @@ const questions = [
     }
 ];
 
-const retrieveInput = () => {
+const retrieveInput = async () => {
     try {
-        return inquirer
-        .prompt(questions)
-        .then(answers => {
-            console.log('\nInserted Data:');
-            console.log(JSON.stringify(answers, null, '  '));
-            return answers;
-        });
+        const answers = await inquirer.prompt(questions);
+        console.log('\nInserted Data:\n', JSON.stringify(answers, null, '  '));
+        return await answers;
     } catch (error) {
         console.log(error);
     }
