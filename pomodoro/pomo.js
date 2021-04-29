@@ -3,19 +3,19 @@ const notifier = require('node-notifier');
 const cliProgress = require('cli-progress');
 const dataHarvester = require("./modules/dataHarvester");
 
-console.log("POMODORO");
 
 const multibar = new cliProgress.MultiBar({
-    format: '"{bar}" | {type} | {percentage}% | {value}/{total}',
+    format: '<<{bar}>> | {type} | {percentage}% | {value}/{total}',
     clearOnComplete: false,
-    hideCursor: true
-});
+    hideCursor: true,
+    barsize: 50
+}, cliProgress.Presets.shades_grey);
 
-const createBars = (insertedData) => {
+const createBars = insertedData => {
     try {
         const partialBar = multibar.create(insertedData.chunk, 0, {type: "chunk"});
         const totalBar = multibar.create(insertedData.hours * 60, 0, {type: "total"});
-        return {partialBar, totalBar};
+        return { partialBar, totalBar };
     } catch (error) {
         throw error;
     }
@@ -28,7 +28,7 @@ const work = (partialBar, totalBar, pauses) => {
             totalBar.increment();
         }
         if (partialBar.value == partialBar.total) {
-            pauses.completed += 1;
+            pauses.cyclesCompleted += 1;
         }
         return;
     } catch (error) {
@@ -65,13 +65,13 @@ const handleBars = async (partialBar, totalBar, pauses, insertedData) => {
         if (partialBar.value != partialBar.total) { //if partial is not ended
             return work(partialBar, totalBar, pauses);
         }
-        if (pauses.completed < insertedData.cycles) { //if cycles aren't completed
+        if (pauses.cyclesCompleted < insertedData.cycles) { //if cycles aren't completed
             return await handleShortBreak(partialBar, pauses);
         }
         if (pauses.longBreak.value == pauses.longBreak.total) { //if longBreak is ended
             partialBar.update(0);
             pauses.longBreak.value = 0;
-            pauses.completed = 0;
+            pauses.cyclesCompleted = 0;
             return;
         }
         return await wait(pauses.longBreak);
@@ -107,9 +107,9 @@ const handleTimeline = async insertedData => {
                 value: 0,
                 total: insertedData.longBreak
             },
-            completed: 0
+            cyclesCompleted: 0
         }
-        const {partialBar, totalBar} = await createBars(insertedData);
+        const { partialBar, totalBar } = await createBars(insertedData);
         const timer = setInterval(() => {
             if (totalBar.value < totalBar.total) {
                 return handleBars(partialBar, totalBar, pauses, insertedData);
@@ -124,9 +124,11 @@ const handleTimeline = async insertedData => {
 
 const main = async () => {
     try {
+        console.log("POMODORO");
+        
         const insertedData = await dataHarvester.retrieveInput();
-        //const insertedData = { hours: 2, chunk: 25, shortBreak: 10, longBreak: 30, cycles: 5 };
-        console.log("\ninsertedData:\n",JSON.stringify(insertedData, null, '  '));
+        /*const insertedData = { hours: 2, chunk: 25, shortBreak: 5, longBreak: 15, cycles: 4 };
+        console.log("\ninsertedData:\n",JSON.stringify(insertedData, null, '  '));*/
 
         return await handleTimeline(insertedData);
 

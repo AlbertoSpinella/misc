@@ -15,7 +15,7 @@ const questions = [
         name: "hours",
         message: "How many hours do you want to study?",
         validate: validateQuestion,
-          filter: Number
+        filter: Number
     },
     {
         type: "number",
